@@ -1,70 +1,155 @@
-# Getting Started with Create React App
+[Explain the below code line by line to a college student in detail. Give a full detailed analysis of the code]
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+import { useState } from "react";
 
-## Available Scripts
+const initialFriends = [
+  {
+    id: 118836,
+    name: "Madhav",
+    image: "https://i.pravatar.cc/48?u=118836",
+    balance: -7,
+  },
+  {
+    id: 933372,
+    name: "Sharma",
+    image: "https://i.pravatar.cc/48?u=933372",
+    balance: 20,
+  },
+  {
+    id: 499476,
+    name: "Akbar",
+    image: "https://i.pravatar.cc/48?u=499476",
+    balance: 0,
+  },
+];
 
-In the project directory, you can run:
+export default function App(){
+  const[items , setItems] = useState(initialFriends);
+  const[showAddFriend , setShowAddFriend]= useState(false)
+  const[selectedFriend, setSelectedFriend] = useState(null);
 
-### `npm start`
+  function handleSelectedFriend(selectedFriend){
+    //setSelectedFriend(selectedFriend)
+    setSelectedFriend(curr=>curr?.id === selectedFriend.id ? null : selectedFriend)
+    setShowAddFriend(false)
+  }
+  function handleShowFriend(){
+    setShowAddFriend(showAddFriend=>!showAddFriend)
+  }
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+  function handleAddFriend(item){
+    setItems(items=>[...items , item])
+    setShowAddFriend(false)
+  }
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+  function handleSplitbill(value){
+   setItems(items => items.map(item=> item.id === selectedFriend.id ? {...item , balance:item.balance+value} : item ))
+   setSelectedFriend(null)
+  }
+  return(
+    <div className="app">
+      <div className="sidebar">
+    <FriendList FriendData={items} onSelected={handleSelectedFriend} onSelectedFriend={selectedFriend}/>
+    { showAddFriend && <FormAddFriend onAddFriend={handleAddFriend}/>}
+    <Button onClick={handleShowFriend} >{showAddFriend ? "Close" : "Add Friend"} </Button>
+      </div>
+  { selectedFriend && <FormSplitBill 
+  onSelectedFriend={selectedFriend} 
+  onSplitBill={handleSplitbill} />}
+    </div>
+  )
+}
 
-### `npm test`
+function Button({children , onClick}){
+  return <button className="button" onClick={onClick}>{children}</button>
+}
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+function FriendList({FriendData ,onSelected , onSelectedFriend}){
+  return(
+    <div>
+      <ul>
+        {FriendData.map(friend=> <Friend Fdata={friend} key={friend.id} onSelected={onSelected} onSelectedFriend={onSelectedFriend} />)}
+      </ul>
+    </div>
+  )
+}
 
-### `npm run build`
+function Friend({Fdata , onSelected , onSelectedFriend}){
+  const isSelected = onSelectedFriend?.id === Fdata.id; // OPtional chaining
+  return(
+    <li className={isSelected ? "selected":""}>
+      <img src={Fdata.image} alt={Fdata.name}/>
+      <h3>{Fdata.name}</h3>
+      {Fdata.balance < 0 && <p className="red">You Owe {Fdata.name} ${Math.abs(Fdata.balance)}</p>}
+      {Fdata.balance > 0 && <p className="green">{Fdata.name} owe you ${Math.abs(Fdata.balance)}</p>}
+      {Fdata.balance === 0 && <p>you and {Fdata.name} are even</p>}
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+      <Button onClick={()=>onSelected(Fdata)}>{isSelected ? "close" : "select"}</Button>
+    </li>
+  )
+}
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+function FormAddFriend({onAddFriend}){
+  const[name , setName] = useState('')
+  const[image , setImage] = useState('https://i.pravatar.cc/48')
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+  function handleSubmit(e){
+    e.preventDefault();
+    const id = crypto.randomUUID();
+    if(!name || !image) return null;
+    const newItem = {id , name , balance:0 , image:`${image}?=${id}`}
+    console.log(newItem);
 
-### `npm run eject`
+    onAddFriend(newItem);
+    setName('')
+    setImage('https://i.pravatar.cc/48')
+  }
+  return(
+    <form className="form-add-friend " onSubmit={handleSubmit}>
+      <label>👀Friend</label>
+      <input type="text" value={name} onChange={(e)=>setName(e.target.value)}/>
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+      <label>😶‍🌫️Image URL</label>
+      <input type="text" value={image} onChange={(e)=>setImage(e.target.value)}/>
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+      <Button>Add</Button>
+    </form>
+    
+  )
+}
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+function FormSplitBill({onSelectedFriend , onSplitBill}){
+  
+  const[bill , setBill] = useState('');
+  const[expense , setExpense] = useState('')
+  const FriendExpense = bill ? bill-expense : "";
+  const[whoPay , setWhoPay] = useState('user')
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+  function handleOnSubmit(e){
+    e.preventDefault();
+    if(!bill || !expense) return null;
+    onSplitBill(whoPay === 'user' ? FriendExpense : -expense);
+  }
 
-## Learn More
+  return(
+    <form className="form-split-bill" onSubmit={handleOnSubmit}>
+      <h2>SPLIT A BILL WITH {onSelectedFriend.name}</h2>
+       <label>👀 Bill value</label>
+      <input type="text"  value={bill} onChange={(e)=>setBill(Number(e.target.value))}/>
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+      <label>😶‍🌫️ Your Expense</label>
+      <input type="text" value={expense} onChange={(e)=>setExpense(Number(e.target.value) > bill ? expense : Number(e.target.value))}/>
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+      <label> 👀 {onSelectedFriend.name} Expense </label>
+      <input type="text" disabled value={FriendExpense}/>
 
-### Code Splitting
+      <label>😶‍🌫️ Who is Paying Bill?</label>
+      <select value={whoPay} onChange={(e)=>setWhoPay(e.target.value)}>
+        <option value="user">You</option>
+        <option value="friend">{onSelectedFriend.name} </option>
+      </select>
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+      <Button>Split Bill</Button>
+    </form>
+  )
+}
